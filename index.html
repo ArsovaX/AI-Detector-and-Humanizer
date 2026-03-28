@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TextForge AI — Plagiarism Checker & AI Detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <i data-lucide="scan-text" class="logo-icon"></i>
+        <div>
+          <h1 class="logo-text">TextForge<span class="accent">AI</span></h1>
+          <p class="logo-sub">AI Detection • Plagiarism Check • Humanizer</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="privacy-badge">
+        <i data-lucide="shield-check"></i>
+        <span>100% Client-Side</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <i data-lucide="sun" class="theme-icon-light"></i>
+        <i data-lucide="moon" class="theme-icon-dark"></i>
+      </button>
+      <a href="https://github.com" target="_blank" class="github-link" aria-label="GitHub">
+        <i data-lucide="github"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <div class="tab-container">
+      <button class="tab-btn active" data-tab="detector">
+        <i data-lucide="brain"></i>
+        <span>AI Detector</span>
+      </button>
+      <button class="tab-btn" data-tab="plagiarism">
+        <i data-lucide="file-diff"></i>
+        <span>Plagiarism Check</span>
+      </button>
+      <button class="tab-btn" data-tab="humanizer">
+        <i data-lucide="wand-2"></i>
+        <span>Humanizer</span>
+      </button>
+      <div class="tab-indicator"></div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- ===== AI DETECTOR TAB ===== -->
+    <section class="tab-panel active" id="panel-detector">
+      <div class="input-section">
+        <div class="input-header">
+          <h2><i data-lucide="text-cursor-input"></i> Enter Text to Analyze</h2>
+          <div class="text-stats" id="detectorStats">
+            <span id="detectorWords">0 words</span>
+            <span class="divider">•</span>
+            <span id="detectorChars">0 chars</span>
+            <span class="divider">•</span>
+            <span id="detectorSentences">0 sentences</span>
+          </div>
+        </div>
+        <textarea id="detectorInput" class="text-input" placeholder="Paste your text here to detect if it was written by AI...&#10;&#10;For best results, use at least 100 words." rows="10"></textarea>
+        <div class="input-actions">
+          <button class="btn btn-secondary" id="detectorSample">
+            <i data-lucide="file-text"></i> Load Sample
+          </button>
+          <button class="btn btn-secondary" id="detectorClear">
+            <i data-lucide="trash-2"></i> Clear
+          </button>
+          <button class="btn btn-primary" id="detectorAnalyze">
+            <i data-lucide="scan"></i> Analyze Text
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state hidden" id="detectorLoading">
+        <div class="loading-spinner"></div>
+        <p>Analyzing text with 7 detection algorithms...</p>
+        <div class="progress-bar"><div class="progress-fill" id="detectorProgress"></div></div>
+      </div>
+
+      <!-- Results -->
+      <div class="results-section hidden" id="detectorResults">
+        <div class="results-header">
+          <h2><i data-lucide="bar-chart-3"></i> Analysis Results</h2>
+          <button class="btn btn-outline" id="exportPDF">
+            <i data-lucide="download"></i> Export PDF
+          </button>
+        </div>
+
+        <!-- Main Score -->
+        <div class="score-hero">
+          <div class="gauge-container" id="mainGauge"></div>
+          <div class="score-info">
+            <div class="score-label" id="scoreLabel">AI Probability</div>
+            <div class="confidence-bar">
+              <span>Confidence:</span>
+              <div class="conf-track"><div class="conf-fill" id="confidenceFill"></div></div>
+              <span id="confidenceValue">0%</span>
+            </div>
+            <div class="score-verdict" id="scoreVerdict"></div>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row" id="textStats"></div>
+
+        <!-- Breakdown Cards -->
+        <h3 class="section-title"><i data-lucide="layers"></i> Detection Breakdown</h3>
+        <div class="breakdown-grid" id="breakdownGrid"></div>
+
+        <!-- Sentence Heatmap -->
+        <h3 class="section-title"><i data-lucide="thermometer"></i> Sentence Heatmap</h3>
+        <p class="section-desc">Each sentence is color-coded by AI probability. <span class="heatmap-legend"><span class="legend-human">Human</span> → <span class="legend-mixed">Mixed</span> → <span class="legend-ai">AI</span></span></p>
+        <div class="heatmap-container" id="heatmapContainer"></div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <h3><i data-lucide="bar-chart"></i> Sentence Length Distribution</h3>
+            <canvas id="sentenceLengthChart"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3><i data-lucide="activity"></i> Vocabulary Distribution</h3>
+            <canvas id="vocabChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Flagged Phrases -->
+        <div class="flagged-section" id="flaggedSection">
+          <h3 class="section-title"><i data-lucide="alert-triangle"></i> Flagged AI Phrases</h3>
+          <div class="flagged-list" id="flaggedList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PLAGIARISM CHECK TAB ===== -->
+    <section class="tab-panel" id="panel-plagiarism">
+      <div class="plag-mode-toggle">
+        <button class="mode-btn active" data-mode="compare">
+          <i data-lucide="columns"></i> Compare Two Texts
+        </button>
+        <button class="mode-btn" data-mode="self">
+          <i data-lucide="file-search"></i> Self-Analysis
+        </button>
+      </div>
+
+      <!-- Compare Mode -->
+      <div class="plag-compare" id="plagCompare">
+        <div class="compare-grid">
+          <div class="compare-col">
+            <div class="input-header">
+              <h2><i data-lucide="file-text"></i> Text A (Original)</h2>
+              <span class="text-count" id="plagWordsA">0 words</span>
+            </div>
+            <textarea id="plagInputA" class="text-input" placeholder="Paste the original text here..." rows="10"></textarea>
+          </div>
+          <div class="compare-col">
+            <div class="input-header">
+              <h2><i data-lucide="file-text"></i> Text B (Suspect)</h2>
+              <span class="text-count" id="plagWordsB">0 words</span>
+            </div>
+            <textarea id="plagInputB" class="text-input" placeholder="Paste the text to compare against..." rows="10"></textarea>
+          </div>
+        </div>
+        <div class="input-actions center">
+          <button class="btn btn-secondary" id="plagSample">
+            <i data-lucide="file-text"></i> Load Sample
+          </button>
+          <button class="btn btn-secondary" id="plagSwap">
+            <i data-lucide="arrow-left-right"></i> Swap
+          </button>
+          <button class="btn btn-primary" id="plagCompareBtn">
+            <i data-lucide="search"></i> Compare Texts
+          </button>
+        </div>
+      </div>
+
+      <!-- Self Mode -->
+      <div class="plag-self hidden" id="plagSelf">
+        <div class="input-header">
+          <h2><i data-lucide="file-search"></i> Analyze Text for Internal Duplication</h2>
+          <span class="text-count" id="plagWordsSelf">0 words</span>
+        </div>
+        <textarea id="plagInputSelf" class="text-input" placeholder="Paste text to check for internal duplication and repetition..." rows="10"></textarea>
+        <div class="input-actions">
+          <button class="btn btn-primary" id="plagSelfBtn">
+            <i data-lucide="search"></i> Analyze
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading-state hidden" id="plagLoading">
+        <div class="loading-spinner"></div>
+        <p>Running plagiarism analysis...</p>
+      </div>
+
+      <!-- Compare Results -->
+      <div class="results-section hidden" id="plagResults">
+        <div class="results-header">
+          <h2><i data-lucide="bar-chart-3"></i> Comparison Results</h2>
+        </div>
+
+        <div class="score-hero">
+          <div class="gauge-container" id="plagGauge"></div>
+          <div class="score-info">
+            <div class="score-label">Similarity Score</div>
+            <div class="score-verdict" id="plagVerdict"></div>
+          </div>
+        </div>
+
+        <div class="stats-row" id="plagStats"></div>
+
+        <!-- Side by Side Highlight -->
+        <h3 class="section-title"><i data-lucide="highlight"></i> Matched Sections</h3>
+        <div class="compare-highlight-grid">
+          <div class="highlight-col">
+            <h4>Text A</h4>
+            <div class="highlight-text" id="plagHighlightA"></div>
+          </div>
+          <div class="highlight-col">
+            <h4>Text B</h4>
+            <div class="highlight-text" id="plagHighlightB"></div>
+          </div>
+        </div>
+
+        <!-- Match List -->
+        <div class="match-list-section" id="matchListSection">
+          <h3 class="section-title"><i data-lucide="link"></i> Matched Sentence Pairs</h3>
+          <div class="match-list" id="matchList"></div>
+        </div>
+      </div>
+
+      <!-- Self Results -->
+      <div class="results-section hidden" id="plagSelfResults">
+        <div class="results-header">
+          <h2><i data-lucide="bar-chart-3"></i> Self-Analysis Results</h2>
+        </div>
+        <div class="score-hero">
+          <div class="gauge-container" id="plagSelfGauge"></div>
+          <div class="score-info">
+            <div class="score-label">Internal Duplication</div>
+            <div class="score-verdict" id="plagSelfVerdict"></div>
+          </div>
+        </div>
+        <div class="stats-row" id="plagSelfStats"></div>
+        <div class="match-list" id="selfMatchList"></div>
+      </div>
+    </section>
+
+    <!-- ===== HUMANIZER TAB ===== -->
+    <section class="tab-panel" id="panel-humanizer">
+      <div class="input-section">
+        <div class="input-header">
+          <h2><i data-lucide="wand-2"></i> Enter AI Text to Humanize</h2>
+          <span class="text-count" id="humanizerWords">0 words</span>
+        </div>
+        <textarea id="humanizerInput" class="text-input" placeholder="Paste AI-generated text here to make it sound more natural and human...&#10;&#10;The humanizer will apply 8 transformation steps to make the text more natural." rows="8"></textarea>
+
+        <!-- Options -->
+        <div class="humanizer-options">
+          <div class="option-group">
+            <label>Intensity</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="intensity" value="light"> Light
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="intensity" value="moderate" checked> Moderate
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="intensity" value="heavy"> Heavy
+              </label>
+            </div>
+          </div>
+          <div class="option-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="optImperfections" checked>
+              Add natural imperfections
+            </label>
+          </div>
+          <div class="option-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="optLengthVar" checked>
+              Vary sentence lengths
+            </label>
+          </div>
+        </div>
+
+        <div class="input-actions">
+          <button class="btn btn-secondary" id="humanizerSample">
+            <i data-lucide="file-text"></i> Load Sample
+          </button>
+          <button class="btn btn-secondary" id="humanizerClear">
+            <i data-lucide="trash-2"></i> Clear
+          </button>
+          <button class="btn btn-primary" id="humanizerRun">
+            <i data-lucide="wand-2"></i> Humanize Text
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading-state hidden" id="humanizerLoading">
+        <div class="loading-spinner"></div>
+        <p>Applying 8-step humanization pipeline...</p>
+      </div>
+
+      <!-- Results -->
+      <div class="results-section hidden" id="humanizerResults">
+        <div class="results-header">
+          <h2><i data-lucide="sparkles"></i> Humanization Results</h2>
+        </div>
+
+        <!-- Before/After Gauges -->
+        <div class="before-after">
+          <div class="ba-item">
+            <div class="ba-label">Before</div>
+            <div class="gauge-container gauge-sm" id="humBeforeGauge"></div>
+            <div class="ba-score" id="humBeforeScore">0% AI</div>
+          </div>
+          <div class="ba-arrow">
+            <i data-lucide="arrow-right"></i>
+          </div>
+          <div class="ba-item">
+            <div class="ba-label">After</div>
+            <div class="gauge-container gauge-sm" id="humAfterGauge"></div>
+            <div class="ba-score" id="humAfterScore">0% AI</div>
+          </div>
+        </div>
+
+        <!-- Output -->
+        <div class="humanizer-output">
+          <div class="output-header">
+            <h3><i data-lucide="file-output"></i> Humanized Text</h3>
+            <button class="btn btn-outline btn-sm" id="copyHumanized">
+              <i data-lucide="copy"></i> Copy
+            </button>
+          </div>
+          <div class="output-text" id="humanizedOutput"></div>
+        </div>
+
+        <!-- Diff View -->
+        <h3 class="section-title"><i data-lucide="git-compare"></i> Changes Made</h3>
+        <div class="diff-container" id="diffContainer"></div>
+
+        <!-- Changes Summary -->
+        <h3 class="section-title"><i data-lucide="list-checks"></i> Change Summary (<span id="changeCount">0</span> changes)</h3>
+        <div class="changes-list" id="changesList"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>TextForge AI — Your text never leaves your browser. All analysis runs 100% client-side.</p>
+    <p class="footer-tech">Built with statistical NLP: Perplexity Analysis • Burstiness Detection • Rabin-Karp Fingerprinting • Cosine Similarity • Shannon Entropy</p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
