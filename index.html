@@ -139,15 +139,35 @@
 
     <section class="tab-panel" id="panel-plagiarism">
       <div class="plag-mode-toggle">
-        <button class="mode-btn active" data-mode="compare">
-          <i data-lucide="columns"></i> Compare Two Texts
+        <button class="mode-btn active" data-mode="web">
+          <i data-lucide="globe"></i> Web Search
+        </button>
+        <button class="mode-btn" data-mode="compare">
+          <i data-lucide="columns"></i> Compare Texts
         </button>
         <button class="mode-btn" data-mode="self">
           <i data-lucide="file-search"></i> Self-Analysis
         </button>
       </div>
 
-      <div class="plag-compare" id="plagCompare">
+      <div class="plag-web" id="plagWeb">
+        <div class="input-header">
+          <h2><i data-lucide="globe"></i> Check Text Against the Web</h2>
+          <span class="text-count" id="plagWordsWeb">0 words</span>
+        </div>
+        <textarea id="plagInputWeb" class="text-input" placeholder="Paste text here to check if it exists anywhere on the internet...&#10;&#10;The tool will search key sentences online and report any matches found." rows="10"></textarea>
+        <div class="input-actions">
+          <button class="btn btn-secondary" id="plagWebSample">
+            <i data-lucide="file-text"></i> Load Sample
+          </button>
+          <button class="btn btn-primary" id="plagWebBtn">
+            <i data-lucide="globe"></i> Search the Web
+          </button>
+        </div>
+        <div class="server-status" id="serverStatus"></div>
+      </div>
+
+      <div class="plag-compare hidden" id="plagCompare">
         <div class="compare-grid">
           <div class="compare-col">
             <div class="input-header">
@@ -241,6 +261,30 @@
         </div>
         <div class="stats-row" id="plagSelfStats"></div>
         <div class="match-list" id="selfMatchList"></div>
+      </div>
+
+      <div class="results-section hidden" id="plagWebResults">
+        <div class="results-header">
+          <h2><i data-lucide="globe"></i> Web Plagiarism Results</h2>
+        </div>
+        <div class="score-hero">
+          <div class="gauge-container" id="plagWebGauge"></div>
+          <div class="score-info">
+            <div class="score-label">Originality Score</div>
+            <div class="score-verdict" id="plagWebVerdict"></div>
+          </div>
+        </div>
+        <div class="stats-row" id="plagWebStats"></div>
+
+        <div class="web-sources-section hidden" id="webSourcesSection">
+          <h3 class="section-title"><i data-lucide="link"></i> Sources Found</h3>
+          <div class="web-sources-list" id="webSourcesList"></div>
+        </div>
+
+        <div class="web-matches-section hidden" id="webMatchesSection">
+          <h3 class="section-title"><i data-lucide="alert-triangle"></i> Matched Sentences</h3>
+          <div class="match-list" id="webMatchList"></div>
+        </div>
       </div>
     </section>
 

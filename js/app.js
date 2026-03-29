@@ -27,14 +27,18 @@ const detectorProgress = $('#detectorProgress');
 
 const plagCompareBtn = $('#plagCompareBtn');
 const plagSelfBtn = $('#plagSelfBtn');
+const plagWebBtn = $('#plagWebBtn');
 const plagInputA = $('#plagInputA');
 const plagInputB = $('#plagInputB');
 const plagInputSelf = $('#plagInputSelf');
+const plagInputWeb = $('#plagInputWeb');
 const plagLoading = $('#plagLoading');
 const plagResults = $('#plagResults');
 const plagSelfResults = $('#plagSelfResults');
+const plagWebResults = $('#plagWebResults');
 const plagSample = $('#plagSample');
 const plagSwap = $('#plagSwap');
+const plagWebSample = $('#plagWebSample');
 
 const humanizerInput = $('#humanizerInput');
 const humanizerRun = $('#humanizerRun');
@@ -137,6 +141,10 @@ function initTextStats() {
     const words = plagInputSelf.value.trim() ? extractWords(plagInputSelf.value).length : 0;
     $('#plagWordsSelf').textContent = `${words} words`;
   });
+  plagInputWeb.addEventListener('input', () => {
+    const words = plagInputWeb.value.trim() ? extractWords(plagInputWeb.value).length : 0;
+    $('#plagWordsWeb').textContent = `${words} words`;
+  });
   humanizerInput.addEventListener('input', () => {
     const words = humanizerInput.value.trim() ? extractWords(humanizerInput.value).length : 0;
     $('#humanizerWords').textContent = `${words} words`;
@@ -144,23 +152,20 @@ function initTextStats() {
 }
 
 function initPlagModes() {
+  const panels = { web: '#plagWeb', compare: '#plagCompare', self: '#plagSelf' };
+  const resultPanels = [plagResults, plagSelfResults, plagWebResults];
+
   $$('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       $$('.mode-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
       const mode = btn.dataset.mode;
-      if (mode === 'compare') {
-        $('#plagCompare').classList.remove('hidden');
-        $('#plagSelf').classList.add('hidden');
-        plagResults.classList.add('hidden');
-        plagSelfResults.classList.add('hidden');
-      } else {
-        $('#plagCompare').classList.add('hidden');
-        $('#plagSelf').classList.remove('hidden');
-        plagResults.classList.add('hidden');
-        plagSelfResults.classList.add('hidden');
+      for (const [key, sel] of Object.entries(panels)) {
+        const el = $(sel);
+        if (el) el.classList.toggle('hidden', key !== mode);
       }
+      resultPanels.forEach(p => p.classList.add('hidden'));
     });
   });
 }
@@ -425,6 +430,138 @@ function renderSelfResults(results) {
   lucide.createIcons();
 }
 
+async function runWebCheck() {
+  const text = plagInputWeb.value.trim();
+  if (!text) return;
+
+  plagResults.classList.add('hidden');
+  plagSelfResults.classList.add('hidden');
+  plagWebResults.classList.add('hidden');
+  plagLoading.classList.remove('hidden');
+
+  try {
+    const res = await fetch('/api/check-plagiarism', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Server error' }));
+      throw new Error(err.error || 'Search failed');
+    }
+
+    const data = await res.json();
+    plagLoading.classList.add('hidden');
+    renderWebResults(data);
+    plagWebResults.classList.remove('hidden');
+  } catch (err) {
+    plagLoading.classList.add('hidden');
+    showError('plagWeb', err.message === 'Failed to fetch'
+      ? 'Cannot connect to server. Run "npm start" first.'
+      : err.message);
+  }
+}
+
+function renderWebResults(data) {
+  const score = (data.originalityScore || 0) / 100;
+  const invertedScore = 1 - score;
+
+  createGauge($('#plagWebGauge'), invertedScore);
+
+  const verdict = $('#plagWebVerdict');
+  if (data.originalityScore >= 80) {
+    verdict.textContent = 'Mostly Original Content';
+    verdict.className = 'score-verdict verdict-human';
+  } else if (data.originalityScore >= 50) {
+    verdict.textContent = 'Some Content Found Online';
+    verdict.className = 'score-verdict verdict-mixed';
+  } else {
+    verdict.textContent = 'Significant Online Matches Found';
+    verdict.className = 'score-verdict verdict-ai';
+  }
+
+  $('#plagWebStats').innerHTML = [
+    { value: `${data.originalityScore}%`, label: 'Originality' },
+    { value: data.sentencesChecked, label: 'Checked' },
+    { value: data.sentencesMatched || 0, label: 'Found Online' },
+    { value: data.sources?.length || 0, label: 'Sources' }
+  ].map(s => `
+    <div class="stat-card">
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>
+  `).join('');
+
+  const sourcesSection = $('#webSourcesSection');
+  const sourcesList = $('#webSourcesList');
+  if (data.sources && data.sources.length > 0) {
+    sourcesSection.classList.remove('hidden');
+    sourcesList.innerHTML = data.sources.map((s, i) => `
+      <div class="web-source-item" style="animation-delay: ${i * 0.08}s">
+        <div class="web-source-info">
+          <a class="web-source-title" href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.title)}</a>
+          <div class="web-source-url">${escapeHtml(s.url)}</div>
+        </div>
+        <span class="web-source-hits">${s.hits} match${s.hits > 1 ? 'es' : ''}</span>
+      </div>
+    `).join('');
+  } else {
+    sourcesSection.classList.add('hidden');
+  }
+
+  const matchesSection = $('#webMatchesSection');
+  const matchList = $('#webMatchList');
+  if (data.matches && data.matches.length > 0) {
+    matchesSection.classList.remove('hidden');
+    matchList.innerHTML = data.matches.map((m, i) => `
+      <div class="match-pair" style="animation-delay: ${i * 0.1}s">
+        <div class="web-match-sentence">"${escapeHtml(m.sentence)}"</div>
+        <div class="web-match-results">
+          ${m.results.map(r => `
+            <div>
+              <a class="web-match-link" href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.title)}</a>
+              ${r.snippet ? `<div class="web-match-snippet">${escapeHtml(r.snippet)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  } else {
+    matchesSection.classList.add('hidden');
+  }
+
+  lucide.createIcons();
+}
+
+function showError(section, message) {
+  const container = $(`#${section}`);
+  let banner = container.querySelector('.error-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.className = 'error-banner';
+    container.appendChild(banner);
+  }
+  banner.innerHTML = `<i data-lucide="alert-circle"></i> ${escapeHtml(message)}`;
+  lucide.createIcons();
+  setTimeout(() => banner.remove(), 8000);
+}
+
+async function checkServerStatus() {
+  const statusEl = $('#serverStatus');
+  try {
+    const res = await fetch('/api/status');
+    if (res.ok) {
+      const data = await res.json();
+      statusEl.innerHTML = `<span class="dot dot-online"></span> Server online — using ${data.searchEngine === 'google' ? 'Google Search' : 'DuckDuckGo'}`;
+    } else {
+      statusEl.innerHTML = `<span class="dot dot-offline"></span> Server offline — run "npm start" to enable web search`;
+    }
+  } catch {
+    statusEl.innerHTML = `<span class="dot dot-offline"></span> Server offline — run "npm start" to enable web search`;
+  }
+}
+
 async function runHumanizer() {
   const text = humanizerInput.value.trim();
   if (!text) return;
@@ -432,48 +569,62 @@ async function runHumanizer() {
   humanizerResults.classList.add('hidden');
   humanizerLoading.classList.remove('hidden');
 
-  const intensity = document.querySelector('input[name="intensity"]:checked')?.value || 'moderate';
-  const imperfections = $('#optImperfections').checked;
-  const lengthVariation = $('#optLengthVar').checked;
+  try {
+    const intensity = document.querySelector('input[name="intensity"]:checked')?.value || 'moderate';
+    const imperfections = $('#optImperfections').checked;
+    const lengthVariation = $('#optLengthVar').checked;
 
-  await delay(300);
-  const result = humanizeText(text, { intensity, imperfections, lengthVariation });
-  await delay(200);
+    await delay(300);
+    const result = humanizeText(text, { intensity, imperfections, lengthVariation });
+    await delay(200);
 
-  humanizerLoading.classList.add('hidden');
-  if (!result) return;
+    humanizerLoading.classList.add('hidden');
 
-  const beforeResult = analyzeText(result.original);
-  const afterResult = analyzeText(result.humanized);
+    if (!result || !result.humanized) {
+      showError('panel-humanizer', 'Humanization failed — try a longer text.');
+      return;
+    }
 
-  const beforeScore = beforeResult ? beforeResult.overallScore : 0;
-  const afterScore = afterResult ? afterResult.overallScore : 0;
+    let beforeScore = 0;
+    let afterScore = 0;
+    try {
+      const beforeResult = analyzeText(result.original);
+      const afterResult = analyzeText(result.humanized);
+      beforeScore = beforeResult ? beforeResult.overallScore : 0;
+      afterScore = afterResult ? afterResult.overallScore : 0;
+    } catch {
+      // scores stay at 0 if analysis fails
+    }
 
-  createGauge($('#humBeforeGauge'), beforeScore);
-  createGauge($('#humAfterGauge'), afterScore);
-  $('#humBeforeScore').textContent = `${Math.round(beforeScore * 100)}% AI`;
-  $('#humAfterScore').textContent = `${Math.round(afterScore * 100)}% AI`;
+    createGauge($('#humBeforeGauge'), beforeScore);
+    createGauge($('#humAfterGauge'), afterScore);
+    $('#humBeforeScore').textContent = `${Math.round(beforeScore * 100)}% AI`;
+    $('#humAfterScore').textContent = `${Math.round(afterScore * 100)}% AI`;
 
-  $('#humanizedOutput').textContent = result.humanized;
+    $('#humanizedOutput').textContent = result.humanized;
 
-  renderDiff($('#diffContainer'), result.original, result.humanized);
+    renderDiff($('#diffContainer'), result.original, result.humanized);
 
-  $('#changeCount').textContent = result.changeCount;
+    $('#changeCount').textContent = result.changeCount;
 
-  const changesList = $('#changesList');
-  changesList.innerHTML = result.changes.slice(0, 50).map((c, i) => `
-    <div class="change-item" style="animation-delay: ${i * 0.03}s">
-      <span class="change-type change-type-${c.type}">${c.type.replace('-', ' ')}</span>
-      <div class="change-detail">
-        <span class="change-from">"${escapeHtml(truncate(c.original, 60))}"</span>
-        <span class="change-arrow">→</span>
-        <span class="change-to">"${escapeHtml(truncate(c.replacement, 60))}"</span>
+    const changesList = $('#changesList');
+    changesList.innerHTML = result.changes.slice(0, 50).map((c, i) => `
+      <div class="change-item" style="animation-delay: ${i * 0.03}s">
+        <span class="change-type change-type-${c.type}">${c.type.replace('-', ' ')}</span>
+        <div class="change-detail">
+          <span class="change-from">"${escapeHtml(truncate(c.original, 60))}"</span>
+          <span class="change-arrow">→</span>
+          <span class="change-to">"${escapeHtml(truncate(c.replacement, 60))}"</span>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
 
-  humanizerResults.classList.remove('hidden');
-  lucide.createIcons();
+    humanizerResults.classList.remove('hidden');
+    lucide.createIcons();
+  } catch (err) {
+    humanizerLoading.classList.add('hidden');
+    showError('panel-humanizer', 'Something went wrong: ' + err.message);
+  }
 }
 
 function delay(ms) {
@@ -510,6 +661,11 @@ function initEvents() {
 
   plagCompareBtn.addEventListener('click', runCompare);
   plagSelfBtn.addEventListener('click', runSelfAnalysis);
+  plagWebBtn.addEventListener('click', runWebCheck);
+  plagWebSample.addEventListener('click', () => {
+    plagInputWeb.value = SAMPLE_AI;
+    plagInputWeb.dispatchEvent(new Event('input'));
+  });
   plagSample.addEventListener('click', () => {
     plagInputA.value = SAMPLE_PLAG_A;
     plagInputB.value = SAMPLE_PLAG_B;
@@ -566,6 +722,7 @@ function init() {
   initPlagModes();
   initEvents();
   lucide.createIcons();
+  checkServerStatus();
 }
 
 document.addEventListener('DOMContentLoaded', init);
