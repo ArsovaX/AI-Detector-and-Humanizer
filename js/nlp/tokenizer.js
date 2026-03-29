@@ -1,5 +1,3 @@
-// tokenizer.js — Text tokenization, sentence splitting, word extraction
-
 const ABBREVIATIONS = new Set([
   'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'st', 'ave', 'blvd',
   'dept', 'est', 'fig', 'govt', 'inc', 'ltd', 'corp', 'vs', 'etc',
@@ -31,7 +29,6 @@ const FUNCTION_WORDS = new Set([
 export function splitSentences(text) {
   const sentences = [];
   let current = '';
-  let charIndex = 0;
   let startIndex = 0;
 
   for (let i = 0; i < text.length; i++) {
@@ -39,17 +36,12 @@ export function splitSentences(text) {
 
     if (/[.!?]/.test(text[i])) {
       const nextChar = text[i + 1] || '';
-      const nextNext = text[i + 2] || '';
 
-      // Check if this is an abbreviation
       const wordBefore = current.trim().split(/\s+/).pop().replace(/[.!?]+$/, '').toLowerCase();
       const isAbbrev = ABBREVIATIONS.has(wordBefore) || /^\d+$/.test(wordBefore);
-
-      // Check for ellipsis
       const isEllipsis = text[i] === '.' && (text[i + 1] === '.' || text[i - 1] === '.');
 
       if (!isAbbrev && !isEllipsis && (/\s/.test(nextChar) || nextChar === '' || /[A-Z"'\u201C]/.test(nextChar))) {
-        // Consume trailing spaces
         while (i + 1 < text.length && text[i + 1] === ' ') {
           current += text[++i];
         }
@@ -69,7 +61,6 @@ export function splitSentences(text) {
     }
   }
 
-  // Handle remaining text
   const trimmed = current.trim();
   if (trimmed.length > 0) {
     sentences.push({
@@ -108,9 +99,7 @@ export function syllableCount(word) {
     prevVowel = isVowel;
   }
 
-  // Silent e
   if (word.endsWith('e') && count > 1) count--;
-  // -le ending
   if (word.endsWith('le') && word.length > 2 && !vowels.includes(word[word.length - 3])) count++;
 
   return Math.max(1, count);
@@ -136,7 +125,6 @@ export function posTag(word) {
     return 'ADV';
   }
 
-  // Suffix rules
   if (w.endsWith('ly')) return 'ADV';
   if (w.endsWith('tion') || w.endsWith('sion') || w.endsWith('ment') || w.endsWith('ness') ||
     w.endsWith('ity') || w.endsWith('ence') || w.endsWith('ance')) return 'NOUN';
@@ -148,7 +136,7 @@ export function posTag(word) {
   if (w.endsWith('er') || w.endsWith('or')) return 'NOUN';
   if (w.endsWith('ist') || w.endsWith('ism')) return 'NOUN';
 
-  return 'NOUN'; // default
+  return 'NOUN';
 }
 
 export function tokenize(text) {

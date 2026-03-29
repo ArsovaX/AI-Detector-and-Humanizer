@@ -1,4 +1,3 @@
-// plagiarism.js — Plagiarism detection engine
 import { extractWords, lowercaseWords, isStopWord, getContentWords } from '../nlp/tokenizer.js';
 import { splitSentences } from '../nlp/tokenizer.js';
 import { clamp, smoothStep } from '../nlp/statistics.js';
@@ -7,19 +6,16 @@ const BASE = 257;
 const MOD = 1000000007;
 const WINDOW_SIZE = 5;
 
-// Rabin-Karp rolling hash fingerprinting
 function computeFingerprints(words, windowSize = WINDOW_SIZE) {
   if (words.length < windowSize) return new Map();
 
   const fingerprints = new Map();
 
-  // Precompute BASE^(windowSize-1) % MOD
   let basePow = 1;
   for (let i = 0; i < windowSize - 1; i++) {
     basePow = (basePow * BASE) % MOD;
   }
 
-  // Initial hash
   let hash = 0;
   for (let i = 0; i < windowSize; i++) {
     hash = (hash * BASE + hashWord(words[i])) % MOD;
@@ -28,9 +24,7 @@ function computeFingerprints(words, windowSize = WINDOW_SIZE) {
   const key = hash.toString();
   fingerprints.set(key, [{ pos: 0, text: words.slice(0, windowSize).join(' ') }]);
 
-  // Rolling hash
   for (let i = 1; i <= words.length - windowSize; i++) {
-    // Remove leading word, add trailing word
     hash = (hash - hashWord(words[i - 1]) * basePow % MOD + MOD) % MOD;
     hash = (hash * BASE + hashWord(words[i + windowSize - 1])) % MOD;
 
@@ -52,7 +46,6 @@ function hashWord(word) {
   return h;
 }
 
-// Cosine similarity between two term-frequency vectors
 function cosineSimilarity(vecA, vecB) {
   const allTerms = new Set([...vecA.keys(), ...vecB.keys()]);
   let dot = 0, magA = 0, magB = 0;
@@ -69,7 +62,6 @@ function cosineSimilarity(vecA, vecB) {
   return denom === 0 ? 0 : dot / denom;
 }
 
-// Build term-frequency vector for a sentence (excluding stop words)
 function buildTFVector(text) {
   const words = getContentWords(lowercaseWords(extractWords(text)));
   const tf = new Map();
@@ -79,20 +71,16 @@ function buildTFVector(text) {
   return tf;
 }
 
-// Longest Common Substring using DP
 function longestCommonSubstring(wordsA, wordsB, minLength = 8) {
   if (wordsA.length === 0 || wordsB.length === 0) return [];
 
-  // Limit for performance
   const maxLen = 2000;
   const a = wordsA.slice(0, maxLen);
   const b = wordsB.slice(0, maxLen);
 
   const matches = [];
-  // Use rolling approach instead of full matrix for memory efficiency
   let prev = new Array(b.length + 1).fill(0);
   let curr = new Array(b.length + 1).fill(0);
-  let maxLenFound = 0;
 
   const found = [];
 
@@ -116,7 +104,6 @@ function longestCommonSubstring(wordsA, wordsB, minLength = 8) {
     curr.fill(0);
   }
 
-  // Deduplicate overlapping matches, keep longest
   found.sort((a, b) => b.length - a.length);
   const used = new Set();
   for (const match of found) {
@@ -135,10 +122,9 @@ function longestCommonSubstring(wordsA, wordsB, minLength = 8) {
     }
   }
 
-  return matches.slice(0, 20); // top 20
+  return matches.slice(0, 20);
 }
 
-// Merge an array of [start, end) intervals into non-overlapping spans
 function mergeSpans(spans) {
   if (spans.length === 0) return [];
   spans.sort((a, b) => a[0] - b[0]);
@@ -158,7 +144,6 @@ function spanCoverage(spans) {
   return mergeSpans(spans).reduce((sum, s) => sum + (s[1] - s[0]), 0);
 }
 
-// Analyze single text for internal duplication
 export function analyzePlagiarism(text) {
   if (!text || text.trim().length === 0) return null;
 
@@ -174,29 +159,75 @@ export function analyzePlagiarism(text) {
     };
   }
 
-  // --- Fingerprint-based duplicate detection with coverage tracking ---
-  const fingerprints = computeFingerprints(words);
+  const sentTextMap = new Map();
+  for (let i = 0; i < sentences.length; i++) {
+    const norm = sentences[i].text.trim().toLowerCase();
+    if (!sentTextMap.has(norm)) sentTextMap.set(norm, []);
+    sentTextMap.get(norm).push(i);
+  }
+
   const duplicateMatches = [];
-  const dupSpans = []; // [start, end) word-index spans that are duplicated
+  const dupSpans = [];
+  let exactDupSentences = 0;
+
+  for (const [norm, indices] of sentTextMap) {
+    if (indices.length < 2) continue;
+    exactDupSentences += indices.length;
+    duplicateMatches.push({
+      text: sentences[indices[0]].text,
+      positions: indices,
+      type: 'exact-sentence',
+      count: indices.length
+    });
+    for (const idx of indices) {
+      const s = sentences[idx];
+      const sentWords = extractWords(s.text);
+      let wordPos = 0;
+      for (let k = 0; k < idx; k++) wordPos += sentences[k].wordCount;
+      dupSpans.push([wordPos, wordPos + sentWords.length]);
+    }
+  }
+  const exactSentRatio = sentences.length > 0 ? exactDupSentences / sentences.length : 0;
+
+  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+  if (paragraphs.length >= 2) {
+    const paraMap = new Map();
+    for (let i = 0; i < paragraphs.length; i++) {
+      const norm = paragraphs[i].toLowerCase();
+      if (!paraMap.has(norm)) paraMap.set(norm, []);
+      paraMap.get(norm).push(i);
+    }
+    for (const [norm, indices] of paraMap) {
+      if (indices.length < 2) continue;
+      const paraText = paragraphs[indices[0]];
+      const alreadyCovered = duplicateMatches.some(
+        m => m.type === 'exact-sentence' && paraText.includes(m.text)
+      );
+      if (!alreadyCovered) {
+        duplicateMatches.push({
+          text: paraText,
+          positions: indices,
+          type: 'exact-paragraph',
+          count: indices.length
+        });
+      }
+    }
+  }
+
+  const fingerprints = computeFingerprints(words);
 
   for (const [hash, positions] of fingerprints) {
     if (positions.length < 2) continue;
-    // Collect non-overlapping position pairs
-    const nonOverlap = [];
-    for (let i = 0; i < positions.length; i++) {
+    let hasNonOverlap = false;
+    for (let i = 0; i < positions.length && !hasNonOverlap; i++) {
       for (let j = i + 1; j < positions.length; j++) {
         if (Math.abs(positions[j].pos - positions[i].pos) >= WINDOW_SIZE) {
-          nonOverlap.push([positions[i].pos, positions[j].pos]);
+          hasNonOverlap = true;
+          break;
         }
       }
     }
-    if (nonOverlap.length > 0) {
-      duplicateMatches.push({
-        text: positions[0].text,
-        positions: positions.map(p => p.pos),
-        type: 'fingerprint'
-      });
-      // Mark every occurrence as a duplicated span
+    if (hasNonOverlap) {
       for (const p of positions) {
         dupSpans.push([p.pos, p.pos + WINDOW_SIZE]);
       }
@@ -205,20 +236,6 @@ export function analyzePlagiarism(text) {
 
   const dupCoverage = words.length > 0 ? spanCoverage(dupSpans) / words.length : 0;
 
-  // --- Exact sentence duplication ---
-  const sentTextMap = new Map();
-  for (let i = 0; i < sentences.length; i++) {
-    const norm = sentences[i].text.trim().toLowerCase();
-    if (!sentTextMap.has(norm)) sentTextMap.set(norm, []);
-    sentTextMap.get(norm).push(i);
-  }
-  let exactDupSentences = 0;
-  for (const indices of sentTextMap.values()) {
-    if (indices.length >= 2) exactDupSentences += indices.length;
-  }
-  const exactSentRatio = sentences.length > 0 ? exactDupSentences / sentences.length : 0;
-
-  // --- Sentence-level similarity (self-comparison, skip adjacent) ---
   const similarSentences = [];
   const tfVectors = sentences.map(s => buildTFVector(s.text));
 
@@ -236,7 +253,6 @@ export function analyzePlagiarism(text) {
   }
   const simRatio = similarSentences.length / Math.max(sentences.length, 1);
 
-  // --- Overall duplication score (coverage-proportional) ---
   const overallScore = clamp(
     dupCoverage * 0.40 +
     exactSentRatio * 0.35 +
@@ -256,7 +272,6 @@ export function analyzePlagiarism(text) {
   };
 }
 
-// Compare two texts
 export function compareTexts(textA, textB) {
   if (!textA || !textB || textA.trim().length === 0 || textB.trim().length === 0) return null;
 
@@ -265,7 +280,6 @@ export function compareTexts(textA, textB) {
   const wordsA = lowercaseWords(extractWords(textA));
   const wordsB = lowercaseWords(extractWords(textB));
 
-  // Fingerprint Jaccard similarity
   const fpA = computeFingerprints(wordsA);
   const fpB = computeFingerprints(wordsB);
 
@@ -279,7 +293,6 @@ export function compareTexts(textA, textB) {
   const union = new Set([...hashesA, ...hashesB]).size;
   const jaccardSimilarity = union > 0 ? intersection / union : 0;
 
-  // Sentence-level matching
   const tfVectorsA = sentencesA.map(s => buildTFVector(s.text));
   const tfVectorsB = sentencesB.map(s => buildTFVector(s.text));
 
@@ -287,7 +300,6 @@ export function compareTexts(textA, textB) {
   const matchedA = new Set();
   const matchedB = new Set();
 
-  // Greedy best-match alignment
   const allPairs = [];
   for (let i = 0; i < sentencesA.length; i++) {
     for (let j = 0; j < sentencesB.length; j++) {
@@ -312,21 +324,16 @@ export function compareTexts(textA, textB) {
     }
   }
 
-  // Longest common substrings
   const lcsMatches = longestCommonSubstring(wordsA, wordsB);
 
-  // Exact-overlap coverage: how many words in the shorter text are covered
-  // by exact LCS matches?
   const shorterLen = Math.min(wordsA.length, wordsB.length);
   const exactMatchedWords = lcsMatches.reduce((sum, m) => sum + m.length, 0);
   const exactCoverage = shorterLen > 0 ? Math.min(exactMatchedWords / shorterLen, 1) : 0;
 
-  // Longest single match, normalised to shorter text length
   const longestMatch = lcsMatches.length > 0
     ? Math.max(...lcsMatches.map(m => m.length)) / shorterLen
     : 0;
 
-  // Overall similarity score — weighted, no flat bonus
   const sentenceMatchRatio = matchedSentences.length / Math.max(sentencesA.length, sentencesB.length, 1);
   const overallScore = clamp(
     jaccardSimilarity * 0.25 +
@@ -348,7 +355,6 @@ export function compareTexts(textA, textB) {
       matchedPairs: matchedSentences.length,
       exactMatches: lcsMatches.length
     },
-    // For highlighting
     matchedIndicesA: [...matchedA],
     matchedIndicesB: [...matchedB],
     sentencesA,

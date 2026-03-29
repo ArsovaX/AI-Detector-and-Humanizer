@@ -1,4 +1,3 @@
-// app.js — Main orchestrator
 import { analyzeText } from './engines/ai-detector.js';
 import { analyzePlagiarism, compareTexts } from './engines/plagiarism.js';
 import { humanizeText } from './engines/humanizer.js';
@@ -9,19 +8,15 @@ import { renderSentenceLengthChart, renderVocabDistribution, destroyCharts } fro
 import { exportReport } from './ui/pdf-export.js';
 import { extractWords } from './nlp/tokenizer.js';
 
-// ===== DOM Cache =====
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
-// Theme
 const themeToggle = $('#themeToggle');
 
-// Tabs
 const tabBtns = $$('.tab-btn');
 const tabPanels = $$('.tab-panel');
 const tabIndicator = $('.tab-indicator');
 
-// Detector
 const detectorInput = $('#detectorInput');
 const detectorAnalyze = $('#detectorAnalyze');
 const detectorClear = $('#detectorClear');
@@ -30,7 +25,6 @@ const detectorLoading = $('#detectorLoading');
 const detectorResults = $('#detectorResults');
 const detectorProgress = $('#detectorProgress');
 
-// Plagiarism
 const plagCompareBtn = $('#plagCompareBtn');
 const plagSelfBtn = $('#plagSelfBtn');
 const plagInputA = $('#plagInputA');
@@ -42,7 +36,6 @@ const plagSelfResults = $('#plagSelfResults');
 const plagSample = $('#plagSample');
 const plagSwap = $('#plagSwap');
 
-// Humanizer
 const humanizerInput = $('#humanizerInput');
 const humanizerRun = $('#humanizerRun');
 const humanizerClear = $('#humanizerClear');
@@ -51,7 +44,6 @@ const humanizerLoading = $('#humanizerLoading');
 const humanizerResults = $('#humanizerResults');
 const copyHumanized = $('#copyHumanized');
 
-// ===== Sample Texts =====
 const SAMPLE_AI = `Artificial intelligence has become an increasingly important topic in today's digital age. It is important to note that the rapid advancement of AI technology plays a crucial role in shaping various industries across the globe. Furthermore, the integration of machine learning algorithms into everyday applications has fundamentally transformed how businesses operate and deliver value to their customers.
 
 The landscape of artificial intelligence encompasses a wide range of technologies, from natural language processing to computer vision. Moreover, these technologies have demonstrated remarkable capabilities in automating complex tasks that were previously thought to require human intelligence. Additionally, the development of large language models has underscored the importance of responsible AI development and deployment.
@@ -70,9 +62,8 @@ const SAMPLE_PLAG_A = `Machine learning is a subset of artificial intelligence t
 
 const SAMPLE_PLAG_B = `Machine learning is a subset of artificial intelligence that focuses on building systems that learn from data. These systems get better over time without being explicitly coded. The core concept of machine learning is that computers can identify patterns in data and make decisions with little human involvement. Deep learning, which is part of machine learning, uses neural networks with multiple layers to analyze various aspects of data.`;
 
-// ===== Theme =====
 function initTheme() {
-  const saved = localStorage.getItem('textforge-theme') || 'dark';
+  const saved = localStorage.getItem('arsavox-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
 }
 
@@ -80,11 +71,10 @@ function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('textforge-theme', next);
+  localStorage.setItem('arsavox-theme', next);
   lucide.createIcons();
 }
 
-// ===== Tabs =====
 function initTabs() {
   updateIndicator();
 
@@ -103,7 +93,6 @@ function initTabs() {
     });
   });
 
-  // Hash routing
   const hash = location.hash.replace('#', '');
   if (hash) {
     const btn = $(`.tab-btn[data-tab="${hash}"]`);
@@ -120,7 +109,6 @@ function updateIndicator() {
   tabIndicator.style.width = active.offsetWidth + 'px';
 }
 
-// ===== Text Stats =====
 function updateWordCount(textarea, wordEl, charEl, sentEl) {
   const text = textarea.value;
   const words = text.trim() ? extractWords(text).length : 0;
@@ -155,7 +143,6 @@ function initTextStats() {
   });
 }
 
-// ===== Plagiarism Mode Toggle =====
 function initPlagModes() {
   $$('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -178,7 +165,6 @@ function initPlagModes() {
   });
 }
 
-// ===== AI Detector =====
 let lastDetectorResults = null;
 
 async function runDetector() {
@@ -189,14 +175,12 @@ async function runDetector() {
   detectorLoading.classList.remove('hidden');
   destroyCharts();
 
-  // Simulate progress
   let progress = 0;
   const progressInterval = setInterval(() => {
     progress = Math.min(progress + Math.random() * 15, 90);
     detectorProgress.style.width = `${progress}%`;
   }, 100);
 
-  // Run analysis async
   await delay(300);
   const results = analyzeText(text);
   lastDetectorResults = results;
@@ -213,14 +197,11 @@ async function runDetector() {
 }
 
 function renderDetectorResults(results) {
-  // Main gauge
   createGauge($('#mainGauge'), results.overallScore);
 
-  // Confidence
   $('#confidenceFill').style.width = `${results.confidence * 100}%`;
   $('#confidenceValue').textContent = `${Math.round(results.confidence * 100)}%`;
 
-  // Verdict
   const verdict = $('#scoreVerdict');
   if (results.overallScore > 0.7) {
     verdict.textContent = 'Likely AI-Generated';
@@ -233,7 +214,6 @@ function renderDetectorResults(results) {
     verdict.className = 'score-verdict verdict-human';
   }
 
-  // Stats
   const statsRow = $('#textStats');
   statsRow.innerHTML = [
     { value: results.stats.words, label: 'Words' },
@@ -248,7 +228,6 @@ function renderDetectorResults(results) {
     </div>
   `).join('');
 
-  // Breakdown
   const grid = $('#breakdownGrid');
   grid.innerHTML = results.breakdown.map((item, i) => {
     const pct = Math.round(item.score * 100);
@@ -268,10 +247,8 @@ function renderDetectorResults(results) {
     `;
   }).join('');
 
-  // Heatmap
   renderHeatmap($('#heatmapContainer'), results.sentenceScores);
 
-  // Charts
   if (results.sentenceLengths.length > 0) {
     renderSentenceLengthChart($('#sentenceLengthChart'), results.sentenceLengths, results.sentenceScores);
   }
@@ -280,7 +257,6 @@ function renderDetectorResults(results) {
     renderVocabDistribution($('#vocabChart'), words);
   }
 
-  // Flagged phrases
   const flaggedSection = $('#flaggedSection');
   if (results.flaggedPhrases.length > 0) {
     flaggedSection.classList.remove('hidden');
@@ -292,7 +268,6 @@ function renderDetectorResults(results) {
   lucide.createIcons();
 }
 
-// ===== Plagiarism =====
 async function runCompare() {
   const textA = plagInputA.value.trim();
   const textB = plagInputB.value.trim();
@@ -328,7 +303,6 @@ function renderCompareResults(results) {
     verdict.className = 'score-verdict verdict-human';
   }
 
-  // Stats
   $('#plagStats').innerHTML = [
     { value: results.stats.sentencesA, label: 'Sentences A' },
     { value: results.stats.sentencesB, label: 'Sentences B' },
@@ -342,11 +316,9 @@ function renderCompareResults(results) {
     </div>
   `).join('');
 
-  // Highlights
   renderPlagiarismHighlight($('#plagHighlightA'), results.sentencesA, results.matchedIndicesA);
   renderPlagiarismHighlight($('#plagHighlightB'), results.sentencesB, results.matchedIndicesB);
 
-  // Match list
   const matchSection = $('#matchListSection');
   const matchList = $('#matchList');
 
@@ -418,9 +390,24 @@ function renderSelfResults(results) {
   `).join('');
 
   const matchList = $('#selfMatchList');
-  if (results.similarSentences.length > 0) {
-    matchList.innerHTML = results.similarSentences.map((m, i) => `
+  let matchHtml = '';
+
+  if (results.duplicateMatches && results.duplicateMatches.length > 0) {
+    matchHtml += results.duplicateMatches.map((m, i) => `
       <div class="match-pair" style="animation-delay: ${i * 0.1}s">
+        <div class="match-pair-header">
+          <span>Exact Duplicate #${i + 1}</span>
+          <span class="match-similarity">${m.count || m.positions.length}× repeated</span>
+        </div>
+        <div class="match-text-label">${m.type === 'exact-paragraph' ? 'Paragraph' : 'Sentence'} (appears ${m.count || m.positions.length} times)</div>
+        <div class="match-text">${escapeHtml(m.text)}</div>
+      </div>
+    `).join('');
+  }
+
+  if (results.similarSentences.length > 0) {
+    matchHtml += results.similarSentences.map((m, i) => `
+      <div class="match-pair" style="animation-delay: ${(i + (results.duplicateMatches?.length || 0)) * 0.1}s">
         <div class="match-pair-header">
           <span>Similar Pair #${i + 1}</span>
           <span class="match-similarity">${Math.round(m.similarity * 100)}% similar</span>
@@ -431,14 +418,13 @@ function renderSelfResults(results) {
         <div class="match-text">${escapeHtml(m.sentenceB.text)}</div>
       </div>
     `).join('');
-  } else {
-    matchList.innerHTML = '<p style="color: var(--text-muted); padding: 16px;">No significant internal duplication found.</p>';
   }
+
+  matchList.innerHTML = matchHtml || '<p style="color: var(--text-muted); padding: 16px;">No significant internal duplication found.</p>';
 
   lucide.createIcons();
 }
 
-// ===== Humanizer =====
 async function runHumanizer() {
   const text = humanizerInput.value.trim();
   if (!text) return;
@@ -457,7 +443,6 @@ async function runHumanizer() {
   humanizerLoading.classList.add('hidden');
   if (!result) return;
 
-  // Before/after AI scores
   const beforeResult = analyzeText(result.original);
   const afterResult = analyzeText(result.humanized);
 
@@ -469,16 +454,12 @@ async function runHumanizer() {
   $('#humBeforeScore').textContent = `${Math.round(beforeScore * 100)}% AI`;
   $('#humAfterScore').textContent = `${Math.round(afterScore * 100)}% AI`;
 
-  // Output text
   $('#humanizedOutput').textContent = result.humanized;
 
-  // Diff
   renderDiff($('#diffContainer'), result.original, result.humanized);
 
-  // Change count
   $('#changeCount').textContent = result.changeCount;
 
-  // Changes list
   const changesList = $('#changesList');
   changesList.innerHTML = result.changes.slice(0, 50).map((c, i) => `
     <div class="change-item" style="animation-delay: ${i * 0.03}s">
@@ -495,7 +476,6 @@ async function runHumanizer() {
   lucide.createIcons();
 }
 
-// ===== Utility =====
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -510,12 +490,9 @@ function truncate(str, len) {
   return str.length > len ? str.substring(0, len - 3) + '...' : str;
 }
 
-// ===== Event Listeners =====
 function initEvents() {
-  // Theme
   themeToggle.addEventListener('click', toggleTheme);
 
-  // Detector
   detectorAnalyze.addEventListener('click', runDetector);
   detectorClear.addEventListener('click', () => {
     detectorInput.value = '';
@@ -531,7 +508,6 @@ function initEvents() {
     if (lastDetectorResults) exportReport(lastDetectorResults);
   });
 
-  // Plagiarism
   plagCompareBtn.addEventListener('click', runCompare);
   plagSelfBtn.addEventListener('click', runSelfAnalysis);
   plagSample.addEventListener('click', () => {
@@ -548,7 +524,6 @@ function initEvents() {
     plagInputB.dispatchEvent(new Event('input'));
   });
 
-  // Humanizer
   humanizerRun.addEventListener('click', runHumanizer);
   humanizerClear.addEventListener('click', () => {
     humanizerInput.value = '';
@@ -571,7 +546,6 @@ function initEvents() {
     });
   });
 
-  // Keyboard shortcut: Ctrl+Enter to analyze
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
       const activeTab = $('.tab-btn.active')?.dataset.tab;
@@ -585,7 +559,6 @@ function initEvents() {
   });
 }
 
-// ===== Init =====
 function init() {
   initTheme();
   initTabs();

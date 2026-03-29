@@ -1,8 +1,5 @@
-// highlights.js — Heatmap, plagiarism highlight, and AI phrase rendering
-
 import { scoreColorHex } from './gauges.js';
 
-// Render sentence heatmap (AI detector)
 export function renderHeatmap(container, sentenceScores) {
   container.innerHTML = '';
 
@@ -11,8 +8,7 @@ export function renderHeatmap(container, sentenceScores) {
     span.className = 'heatmap-sentence';
     span.textContent = s.text + ' ';
 
-    // Color: green (human) → yellow → red (AI)
-    const hue = (1 - s.score) * 120; // 120=green, 0=red
+    const hue = (1 - s.score) * 120;
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const lightness = isDark ? '20%' : '88%';
     const saturation = '70%';
@@ -22,7 +18,6 @@ export function renderHeatmap(container, sentenceScores) {
       ? `hsl(${hue}, 60%, 75%)`
       : `hsl(${hue}, 70%, 25%)`;
 
-    // Tooltip
     const tooltip = document.createElement('span');
     tooltip.className = 'heatmap-tooltip';
     tooltip.textContent = `AI: ${Math.round(s.score * 100)}%`;
@@ -32,7 +27,6 @@ export function renderHeatmap(container, sentenceScores) {
   }
 }
 
-// Render plagiarism highlights (comparison mode)
 export function renderPlagiarismHighlight(container, sentences, matchedIndices) {
   container.innerHTML = '';
 
@@ -49,11 +43,9 @@ export function renderPlagiarismHighlight(container, sentences, matchedIndices) 
   }
 }
 
-// Render flagged AI phrases list
 export function renderFlaggedPhrases(container, flaggedPhrases) {
   container.innerHTML = '';
 
-  // Deduplicate by phrase
   const seen = new Map();
   for (const fp of flaggedPhrases) {
     const key = fp.original.toLowerCase();

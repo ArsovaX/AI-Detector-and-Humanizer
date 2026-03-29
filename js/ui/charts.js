@@ -1,5 +1,3 @@
-// charts.js — Chart.js wrappers for visualizations
-
 import { scoreColorHex } from './gauges.js';
 
 let sentenceChart = null;
@@ -73,7 +71,6 @@ export function renderVocabDistribution(canvas, words) {
 
   if (vocabChart) vocabChart.destroy();
 
-  // Build frequency distribution
   const freq = new Map();
   for (const w of words) {
     const lw = w.toLowerCase();
@@ -84,7 +81,6 @@ export function renderVocabDistribution(canvas, words) {
   const ranks = sorted.map((_, i) => i + 1);
   const frequencies = sorted.map(([, f]) => f);
 
-  // Ideal Zipf line: freq = C / rank
   const C = frequencies[0] || 1;
   const zipfLine = ranks.map(r => C / r);
 

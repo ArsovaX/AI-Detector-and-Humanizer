@@ -1,21 +1,16 @@
-// humanizer.js — Text humanization engine with 8-step transform pipeline
 import { splitSentences, extractWords, lowercaseWords } from '../nlp/tokenizer.js';
 import { mean, coefficientOfVariation, clamp } from '../nlp/statistics.js';
 import { AI_PHRASES, AI_PHRASE_REPLACEMENTS, DISCOURSE_MARKERS, FILLER_PHRASES, FORMAL_TO_CASUAL, CONTRACTION_MAP, SENTENCE_STARTERS_AI } from '../nlp/wordlists.js';
 
-// Step 1: Replace AI phrases with natural alternatives (context-safe)
 function replaceAIPhrases(text, changes) {
   let result = text;
 
   for (const [phrase, replacements] of AI_PHRASE_REPLACEMENTS) {
     const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Capture optional trailing punctuation so we can handle it
     const regex = new RegExp(escaped + '([,.:;]?)', 'gi');
     result = result.replace(regex, (fullMatch, trailingPunct) => {
       let replacement = replacements[Math.floor(Math.random() * replacements.length)];
-      // Strip any accidental trailing punctuation from the replacement itself
       replacement = replacement.replace(/[,.:;]+$/, '');
-      // Re-attach the original trailing punctuation (if any) exactly once
       if (trailingPunct) {
         replacement += trailingPunct;
       }
@@ -27,7 +22,6 @@ function replaceAIPhrases(text, changes) {
   return result;
 }
 
-// Step 2: Vary sentence lengths
 function varySentenceLengths(text, intensity, changes) {
   const sentences = splitSentences(text);
   if (sentences.length < 3) return text;
@@ -35,7 +29,6 @@ function varySentenceLengths(text, intensity, changes) {
   const lengths = sentences.map(s => s.wordCount);
   const cv = coefficientOfVariation(lengths);
 
-  // Only modify if too uniform
   if (cv > 0.4) return text;
 
   const modified = [];
@@ -45,7 +38,6 @@ function varySentenceLengths(text, intensity, changes) {
     const s = sentences[i];
     const words = extractWords(s.text);
 
-    // Split long sentences at natural break points
     if (words.length > 25 && intensity !== 'light') {
       const conjIdx = findSplitPoint(s.text);
       if (conjIdx > 10) {
@@ -65,7 +57,6 @@ function varySentenceLengths(text, intensity, changes) {
       }
     }
 
-    // Merge short adjacent sentences
     if (words.length < 8 && i + 1 < sentences.length && sentences[i + 1].wordCount < 8 && intensity !== 'light') {
       const conjunctions = [' and ', ' but ', ' so ', ', and ', ' — '];
       const conj = conjunctions[Math.floor(Math.random() * conjunctions.length)];
@@ -84,7 +75,6 @@ function varySentenceLengths(text, intensity, changes) {
 }
 
 function findSplitPoint(text) {
-  // Look for comma + conjunction or semicolon
   const patterns = [
     /,\s*(and|but|or|so|because|which|while)\s/gi,
     /;\s/g,
@@ -112,17 +102,14 @@ function ensureEnding(text) {
   return trimmed + '.';
 }
 
-// Step 3: Introduce contractions
 function introduceContractions(text, changes) {
   let result = text;
 
   for (const [full, contraction] of CONTRACTION_MAP) {
     const regex = new RegExp('\\b' + full.replace(/\s+/g, '\\s+') + '\\b', 'gi');
     result = result.replace(regex, (match) => {
-      // Apply to ~60% of opportunities
       if (Math.random() > 0.6) return match;
 
-      // Match case
       let replacement = contraction;
       if (match[0] === match[0].toUpperCase()) {
         replacement = contraction.charAt(0).toUpperCase() + contraction.slice(1);
@@ -136,14 +123,11 @@ function introduceContractions(text, changes) {
   return result;
 }
 
-// Step 4: Passive to active voice (basic)
 function passiveToActive(text, changes) {
-  // Pattern: was/were/is/are + past participle + by + agent
   const regex = /\b(was|were|is|are|has been|have been)\s+(\w+ed)\s+by\s+([\w\s]+?)([.,;!?]|$)/gi;
 
   return text.replace(regex, (match, aux, verb, agent, end) => {
-    // Only transform clear cases
-    if (agent.trim().split(/\s+/).length > 4) return match; // Agent too long, likely complex
+    if (agent.trim().split(/\s+/).length > 4) return match;
 
     const baseVerb = verb.replace(/ed$/, '');
     let tense = 'past';
@@ -157,7 +141,6 @@ function passiveToActive(text, changes) {
   });
 }
 
-// Step 5: Inject discourse markers
 function injectDiscourseMarkers(text, intensity, changes) {
   const sentences = splitSentences(text);
   if (sentences.length < 4) return text;
@@ -180,11 +163,9 @@ function injectDiscourseMarkers(text, intensity, changes) {
   return result.join(' ');
 }
 
-// Step 6: Controlled imperfections
 function addImperfections(text, intensity, changes) {
   let result = text;
 
-  // Replace formal words with casual equivalents
   for (const [formal, casual] of FORMAL_TO_CASUAL) {
     const regex = new RegExp('\\b' + formal + '\\b', 'gi');
     result = result.replace(regex, (match) => {
@@ -199,7 +180,6 @@ function addImperfections(text, intensity, changes) {
     });
   }
 
-  // Start some sentences with "And" or "But"
   if (intensity !== 'light') {
     const sentences = splitSentences(result);
     const modified = sentences.map((s, i) => {
@@ -218,21 +198,18 @@ function addImperfections(text, intensity, changes) {
   return result;
 }
 
-// Step 7: Diversify sentence starters
 function diversifyStarters(text, changes) {
   const sentences = splitSentences(text);
   if (sentences.length < 3) return text;
 
   const modified = [...sentences.map(s => s.text)];
 
-  // Find consecutive sentences starting with the same word
   for (let i = 1; i < modified.length; i++) {
     const prevStart = modified[i - 1].split(/\s+/)[0].toLowerCase();
     const currStart = modified[i].split(/\s+/)[0].toLowerCase();
 
     if (prevStart === currStart && SENTENCE_STARTERS_AI.has(currStart)) {
       const rewrites = [
-        // Prepend a transitional phrase
         `What's interesting is that ${modified[i].charAt(0).toLowerCase() + modified[i].slice(1)}`,
         `Looking at it another way, ${modified[i].charAt(0).toLowerCase() + modified[i].slice(1)}`,
         `From a practical standpoint, ${modified[i].charAt(0).toLowerCase() + modified[i].slice(1)}`,
@@ -247,14 +224,61 @@ function diversifyStarters(text, changes) {
   return modified.join(' ');
 }
 
-// Step 8: Final polish — aggressive punctuation and spacing cleanup
-function finalPolish(text, changes) {
+const INTRO_PHRASES = [
+  'note that', 'keep in mind that', 'remember that',
+  'it turns out that', 'notice that', 'notably',
+  'these days', 'nowadays', 'today',
+  'with how fast things move',
+  'you really need to', 'the key is to', 'make sure to',
+  'all in all', 'in the end', 'at the end of the day',
+  'what matters here is that',
+  'on top of that', 'what\'s more',
+  'so', 'because of this', 'as a result',
+  'also', 'plus', 'and',
+];
+
+function fixStackedOpeners(text, changes) {
+  const sentences = splitSentences(text);
+  if (sentences.length === 0) return text;
+
+  const modified = sentences.map(s => {
+    let t = s.text;
+
+    for (const intro of INTRO_PHRASES) {
+      const escapedIntro = intro.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = new RegExp(
+        '^([A-Z][a-z\']+(?:\\s+[a-z\']+)*[,:])\\s+(' + escapedIntro + ')\\s+',
+        'i'
+      );
+      const match = t.match(pattern);
+      if (match) {
+        const marker = match[1];
+        const introHit = match[2];
+        const afterIntro = t.slice(match[0].length);
+
+        const temporals = ['these days', 'nowadays', 'today', 'with how fast things move'];
+        let fixed;
+        if (temporals.includes(introHit.toLowerCase())) {
+          fixed = introHit.charAt(0).toUpperCase() + introHit.slice(1) + ', ' + afterIntro;
+        } else {
+          const rest = afterIntro.charAt(0).toUpperCase() + afterIntro.slice(1);
+          fixed = marker + ' ' + rest;
+        }
+        changes.push({ type: 'stacked-opener', original: t, replacement: fixed, step: 8 });
+        t = fixed;
+        break;
+      }
+    }
+    return t;
+  });
+
+  return modified.join(' ');
+}
+
+function finalPolish(text) {
   let result = text;
 
-  // Fix double spaces
   result = result.replace(/  +/g, ' ');
-
-  // Fix malformed punctuation combos: ,. → .  ,, → ,  .: → :  ;. → .  :: → :
   result = result.replace(/[,;:]\s*\./g, '.');
   result = result.replace(/\.\s*,/g, '.');
   result = result.replace(/,,+/g, ',');
@@ -266,35 +290,25 @@ function finalPolish(text, changes) {
   result = result.replace(/,\s*;/g, ';');
   result = result.replace(/,\s*:/g, ':');
 
-  // Fix spacing around punctuation (remove space before punctuation)
   result = result.replace(/\s+([.,;:!?])/g, '$1');
-
-  // Ensure space after punctuation (except end-of-string)
   result = result.replace(/([.,;:!?])([A-Za-z])/g, '$1 $2');
 
-  // Ensure proper capitalization after sentence endings
   result = result.replace(/([.!?])\s+([a-z])/g, (m, punct, letter) => {
     return punct + ' ' + letter.toUpperCase();
   });
 
-  // Capitalize first character of text
   result = result.replace(/^\s*[a-z]/, m => m.toUpperCase());
-
-  // Fix any broken contractions
   result = result.replace(/'\s+(?=[a-z])/g, "'");
-
-  // Remove leading/trailing whitespace
   result = result.trim();
 
   return result;
 }
 
-// Main humanizer function
 export function humanizeText(text, options = {}) {
   if (!text || text.trim().length === 0) return null;
 
   const {
-    intensity = 'moderate', // light, moderate, heavy
+    intensity = 'moderate',
     imperfections = true,
     lengthVariation = true
   } = options;
@@ -302,37 +316,26 @@ export function humanizeText(text, options = {}) {
   const changes = [];
   let result = text;
 
-  // Preserve paragraph breaks
   const paragraphs = result.split(/\n\s*\n/);
   const processedParagraphs = paragraphs.map(para => {
     let processed = para;
 
-    // Step 1: AI phrase replacement
     processed = replaceAIPhrases(processed, changes);
 
-    // Step 2: Sentence length variation
     if (lengthVariation) {
       processed = varySentenceLengths(processed, intensity, changes);
     }
 
-    // Step 3: Contractions
     processed = introduceContractions(processed, changes);
-
-    // Step 4: Passive to active voice
     processed = passiveToActive(processed, changes);
-
-    // Step 5: Discourse markers
     processed = injectDiscourseMarkers(processed, intensity, changes);
 
-    // Step 6: Controlled imperfections
     if (imperfections) {
       processed = addImperfections(processed, intensity, changes);
     }
 
-    // Step 7: Diversify starters
     processed = diversifyStarters(processed, changes);
-
-    // Step 8: Final polish
+    processed = fixStackedOpeners(processed, changes);
     processed = finalPolish(processed, changes);
 
     return processed;

@@ -1,5 +1,3 @@
-// pdf-export.js — PDF report generation using jsPDF
-
 export function exportReport(results) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -9,25 +7,21 @@ export function exportReport(results) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - margin * 2;
 
-  // Colors
   const primary = [99, 102, 241];
   const dark = [26, 26, 46];
   const gray = [102, 102, 128];
   const light = [200, 200, 210];
 
-  // ===== Page 1: Header & Overall Score =====
-  // Title
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...dark);
-  doc.text('TextForge AI', margin, y + 8);
+  doc.text('ArsavoX', margin, y + 8);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...gray);
   doc.text('AI Detection Report', margin, y + 16);
 
-  // Date
   const date = new Date().toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
     hour: '2-digit', minute: '2-digit'
@@ -37,13 +31,11 @@ export function exportReport(results) {
 
   y += 30;
 
-  // Separator
   doc.setDrawColor(...primary);
   doc.setLineWidth(0.5);
   doc.line(margin, y, pageWidth - margin, y);
   y += 15;
 
-  // Overall Score
   const score = Math.round(results.overallScore * 100);
   const confidence = Math.round(results.confidence * 100);
 
@@ -53,7 +45,6 @@ export function exportReport(results) {
   doc.text('Overall AI Probability', margin, y);
   y += 12;
 
-  // Score box
   const scoreColor = results.overallScore > 0.7 ? [239, 68, 68] :
     results.overallScore > 0.4 ? [245, 158, 11] : [16, 185, 129];
 
@@ -64,7 +55,6 @@ export function exportReport(results) {
   doc.setTextColor(255, 255, 255);
   doc.text(`${score}%`, margin + 25, y + 17, { align: 'center' });
 
-  // Verdict
   doc.setFontSize(12);
   doc.setTextColor(...dark);
   const verdict = results.overallScore > 0.7 ? 'Likely AI-Generated' :
@@ -77,7 +67,6 @@ export function exportReport(results) {
 
   y += 38;
 
-  // Stats
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...dark);
@@ -104,14 +93,12 @@ export function exportReport(results) {
 
   y += 10;
 
-  // ===== Page 2: Breakdown =====
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...dark);
   doc.text('Detection Breakdown', margin, y);
   y += 10;
 
-  // Table header
   doc.setFillColor(240, 240, 245);
   doc.rect(margin, y, contentWidth, 8, 'F');
   doc.setFontSize(8);
@@ -140,11 +127,9 @@ export function exportReport(results) {
     doc.setTextColor(...gray);
     doc.text(`${Math.round(item.weight * 100)}%`, margin + 90, y + 4);
 
-    // Truncate detail
     const detail = item.detail.length > 40 ? item.detail.substring(0, 37) + '...' : item.detail;
     doc.text(detail, margin + 115, y + 4);
 
-    // Light separator
     doc.setDrawColor(...light);
     doc.setLineWidth(0.1);
     doc.line(margin, y + 7, pageWidth - margin, y + 7);
@@ -154,7 +139,6 @@ export function exportReport(results) {
 
   y += 10;
 
-  // Flagged phrases
   if (results.flaggedPhrases && results.flaggedPhrases.length > 0) {
     if (y > 240) { doc.addPage(); y = margin; }
 
@@ -167,7 +151,6 @@ export function exportReport(results) {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
 
-    // Deduplicate
     const seen = new Set();
     for (const fp of results.flaggedPhrases) {
       const key = fp.original.toLowerCase();
@@ -184,19 +167,18 @@ export function exportReport(results) {
     }
   }
 
-  // Footer on each page
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(7);
     doc.setTextColor(...light);
     doc.text(
-      `TextForge AI Report — Generated ${date} — Page ${i} of ${totalPages}`,
+      `ArsavoX Report — Generated ${date} — Page ${i} of ${totalPages}`,
       pageWidth / 2,
       doc.internal.pageSize.getHeight() - 10,
       { align: 'center' }
     );
   }
 
-  doc.save(`textforge-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  doc.save(`arsavox-report-${new Date().toISOString().split('T')[0]}.pdf`);
 }

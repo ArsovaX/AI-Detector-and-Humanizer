@@ -1,7 +1,4 @@
-// wordlists.js — AI phrases, replacements, discourse markers, word lists
-
 export const AI_PHRASES = [
-  // High confidence (weight 1.0)
   { phrase: 'it is important to note that', weight: 1.0 },
   { phrase: 'it is worth noting that', weight: 1.0 },
   { phrase: 'in today\'s digital age', weight: 1.0 },
@@ -22,8 +19,6 @@ export const AI_PHRASES = [
   { phrase: 'paradigm shift', weight: 0.9 },
   { phrase: 'holistic approach', weight: 0.9 },
   { phrase: 'game-changer', weight: 0.8 },
-
-  // Medium confidence (weight 0.5-0.7)
   { phrase: 'furthermore', weight: 0.7 },
   { phrase: 'moreover', weight: 0.7 },
   { phrase: 'additionally', weight: 0.7 },
@@ -59,8 +54,6 @@ export const AI_PHRASES = [
   { phrase: 'indispensable', weight: 0.6 },
   { phrase: 'paramount', weight: 0.7 },
   { phrase: 'imperative', weight: 0.6 },
-
-  // Lower confidence (weight 0.25-0.4)
   { phrase: 'therefore', weight: 0.4 },
   { phrase: 'nevertheless', weight: 0.4 },
   { phrase: 'nonetheless', weight: 0.4 },
@@ -93,25 +86,23 @@ export const AI_PHRASES = [
   { phrase: 'ubiquitous', weight: 0.4 }
 ];
 
-// NOTE: Replacements must NOT end with punctuation (commas, colons, periods).
-// The humanizer's replaceAIPhrases() handles surrounding punctuation context.
 export const AI_PHRASE_REPLACEMENTS = new Map([
-  ['it is important to note that', ['Worth mentioning', 'One thing to know', 'Keep in mind that']],
-  ['it is worth noting that', ['Interestingly', 'You should know that', 'Something to note']],
-  ['in today\'s digital age', ['These days', 'Right now', 'Currently']],
-  ['in today\'s fast-paced world', ['With how fast things move', 'Given how quickly things change', 'Nowadays']],
+  ['it is important to note that', ['note that', 'keep in mind that', 'remember that']],
+  ['it is worth noting that', ['it turns out that', 'notice that', 'notably']],
+  ['in today\'s digital age', ['these days', 'nowadays', 'today']],
+  ['in today\'s fast-paced world', ['these days', 'with how fast things move', 'nowadays']],
   ['plays a crucial role', ['really matters', 'is a big deal', 'makes a real difference']],
   ['delve into', ['dig into', 'look at', 'explore']],
   ['delves into', ['digs into', 'looks at', 'explores']],
   ['navigating the complexities', ['dealing with the tricky parts', 'working through the details', 'figuring out']],
   ['underscores the importance', ['shows why it matters', 'highlights how important', 'makes clear why']],
   ['in the realm of', ['in', 'when it comes to', 'in the world of']],
-  ['it is essential to', ['you need to', 'it\'s key to', 'make sure to']],
+  ['it is essential to', ['you really need to', 'the key is to', 'make sure to']],
   ['furthermore', ['also', 'plus', 'on top of that']],
   ['moreover', ['also', 'what\'s more', 'and']],
   ['additionally', ['also', 'plus', 'and']],
   ['consequently', ['so', 'because of this', 'as a result']],
-  ['in conclusion', ['to wrap up', 'all in all', 'bottom line']],
+  ['in conclusion', ['all in all', 'in the end', 'at the end of the day']],
   ['in order to', ['to', 'so you can', 'for']],
   ['in light of', ['given', 'considering', 'because of']],
   ['with regard to', ['about', 'regarding', 'when it comes to']],

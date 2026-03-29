@@ -1,5 +1,3 @@
-// gauges.js — Animated SVG donut gauge components
-
 export function createGauge(container, score, opts = {}) {
   const {
     size = container.classList.contains('gauge-sm') ? 100 : 160,
@@ -50,7 +48,6 @@ export function createGauge(container, score, opts = {}) {
       const arc = container.querySelector('.gauge-arc');
       if (arc) arc.style.strokeDashoffset = offset;
 
-      // Count up number
       if (label) {
         animateNumber(container.querySelector('.gauge-number'), 0, pct, 1200);
       }
@@ -60,9 +57,9 @@ export function createGauge(container, score, opts = {}) {
 
 export function scoreColor(score) {
   if (score <= 0.3) return 'var(--success)';
-  if (score <= 0.5) return '#84cc16'; // lime
+  if (score <= 0.5) return '#84cc16';
   if (score <= 0.7) return 'var(--warning)';
-  if (score <= 0.85) return '#f97316'; // orange
+  if (score <= 0.85) return '#f97316';
   return 'var(--danger)';
 }
 
@@ -80,7 +77,6 @@ function animateNumber(el, from, to, duration) {
   const update = (now) => {
     const elapsed = now - start;
     const progress = Math.min(elapsed / duration, 1);
-    // Ease out
     const eased = 1 - Math.pow(1 - progress, 3);
     el.textContent = Math.round(from + (to - from) * eased);
     if (progress < 1) requestAnimationFrame(update);

@@ -1,5 +1,3 @@
-// statistics.js — Statistical utility functions
-
 export function mean(arr) {
   if (arr.length === 0) return 0;
   return arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -33,7 +31,6 @@ export function entropy(frequencyMap) {
 }
 
 export function zipfCorrelation(frequencyMap) {
-  // Sort by frequency descending
   const sorted = Array.from(frequencyMap.entries())
     .sort((a, b) => b[1] - a[1]);
 
@@ -73,7 +70,6 @@ export function pearsonCorrelation(x, y) {
 }
 
 export function yulesK(words) {
-  // Frequency of frequencies
   const wordFreq = new Map();
   for (const w of words) {
     wordFreq.set(w, (wordFreq.get(w) || 0) + 1);

@@ -1,5 +1,3 @@
-// ngrams.js — N-gram generation and frequency analysis
-
 export function generateNgrams(words, n) {
   const ngrams = new Map();
   for (let i = 0; i <= words.length - n; i++) {

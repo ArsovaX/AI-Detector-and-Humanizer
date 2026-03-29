@@ -1,10 +1,7 @@
-// diff.js — Word-level diff rendering
-
 export function renderDiff(container, original, modified) {
   const wordsA = original.split(/(\s+)/);
   const wordsB = modified.split(/(\s+)/);
 
-  // Compute LCS for word-level diff
   const lcs = computeLCS(
     wordsA.filter(w => w.trim()),
     wordsB.filter(w => w.trim())
@@ -39,7 +36,6 @@ function computeLCS(a, b) {
   const m = a.length;
   const n = b.length;
 
-  // For very long texts, use a simplified approach
   if (m * n > 1000000) {
     return simplifiedLCS(a, b);
   }
@@ -56,7 +52,6 @@ function computeLCS(a, b) {
     }
   }
 
-  // Backtrack
   const result = [];
   let i = m, j = n;
   while (i > 0 && j > 0) {
@@ -75,7 +70,6 @@ function computeLCS(a, b) {
 }
 
 function simplifiedLCS(a, b) {
-  // For long texts, use a greedy matching approach
   const result = [];
   const bMap = new Map();
 
@@ -111,30 +105,25 @@ function buildDiff(a, b, lcs) {
     if (li < lcs.length) {
       const { aIdx, bIdx } = lcs[li];
 
-      // Deletions before match
       while (ai < aIdx) {
         diff.push({ type: 'delete', value: a[ai] });
         ai++;
       }
 
-      // Insertions before match
       while (bi < bIdx) {
         diff.push({ type: 'insert', value: b[bi] });
         bi++;
       }
 
-      // Match
       diff.push({ type: 'equal', value: b[bi] });
       ai++;
       bi++;
       li++;
     } else {
-      // Remaining deletions
       while (ai < a.length) {
         diff.push({ type: 'delete', value: a[ai] });
         ai++;
       }
-      // Remaining insertions
       while (bi < b.length) {
         diff.push({ type: 'insert', value: b[bi] });
         bi++;

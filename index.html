@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TextForge AI — Plagiarism Checker & AI Detector</title>
+  <title>ArsavoX — Plagiarism Checker & AI Detector</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -12,13 +12,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <!-- Header -->
   <header class="header">
     <div class="header-left">
       <div class="logo">
         <i data-lucide="scan-text" class="logo-icon"></i>
         <div>
-          <h1 class="logo-text">TextForge<span class="accent">AI</span></h1>
+          <h1 class="logo-text">Arsavo<span class="accent">X</span></h1>
           <p class="logo-sub">AI Detection • Plagiarism Check • Humanizer</p>
         </div>
       </div>
@@ -32,13 +31,12 @@
         <i data-lucide="sun" class="theme-icon-light"></i>
         <i data-lucide="moon" class="theme-icon-dark"></i>
       </button>
-      <a href="https://github.com" target="_blank" class="github-link" aria-label="GitHub">
+      <a href="https://github.com/ArsovaX" target="_blank" class="github-link" aria-label="GitHub">
         <i data-lucide="github"></i>
       </a>
     </div>
   </header>
 
-  <!-- Tab Navigation -->
   <nav class="tab-nav">
     <div class="tab-container">
       <button class="tab-btn active" data-tab="detector">
@@ -57,10 +55,8 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
   <main class="main">
 
-    <!-- ===== AI DETECTOR TAB ===== -->
     <section class="tab-panel active" id="panel-detector">
       <div class="input-section">
         <div class="input-header">
@@ -87,14 +83,12 @@
         </div>
       </div>
 
-      <!-- Loading State -->
       <div class="loading-state hidden" id="detectorLoading">
         <div class="loading-spinner"></div>
         <p>Analyzing text with 7 detection algorithms...</p>
         <div class="progress-bar"><div class="progress-fill" id="detectorProgress"></div></div>
       </div>
 
-      <!-- Results -->
       <div class="results-section hidden" id="detectorResults">
         <div class="results-header">
           <h2><i data-lucide="bar-chart-3"></i> Analysis Results</h2>
@@ -103,7 +97,6 @@
           </button>
         </div>
 
-        <!-- Main Score -->
         <div class="score-hero">
           <div class="gauge-container" id="mainGauge"></div>
           <div class="score-info">
@@ -117,19 +110,15 @@
           </div>
         </div>
 
-        <!-- Stats Row -->
         <div class="stats-row" id="textStats"></div>
 
-        <!-- Breakdown Cards -->
         <h3 class="section-title"><i data-lucide="layers"></i> Detection Breakdown</h3>
         <div class="breakdown-grid" id="breakdownGrid"></div>
 
-        <!-- Sentence Heatmap -->
         <h3 class="section-title"><i data-lucide="thermometer"></i> Sentence Heatmap</h3>
         <p class="section-desc">Each sentence is color-coded by AI probability. <span class="heatmap-legend"><span class="legend-human">Human</span> → <span class="legend-mixed">Mixed</span> → <span class="legend-ai">AI</span></span></p>
         <div class="heatmap-container" id="heatmapContainer"></div>
 
-        <!-- Charts -->
         <div class="charts-row">
           <div class="chart-card">
             <h3><i data-lucide="bar-chart"></i> Sentence Length Distribution</h3>
@@ -141,7 +130,6 @@
           </div>
         </div>
 
-        <!-- Flagged Phrases -->
         <div class="flagged-section" id="flaggedSection">
           <h3 class="section-title"><i data-lucide="alert-triangle"></i> Flagged AI Phrases</h3>
           <div class="flagged-list" id="flaggedList"></div>
@@ -149,7 +137,6 @@
       </div>
     </section>
 
-    <!-- ===== PLAGIARISM CHECK TAB ===== -->
     <section class="tab-panel" id="panel-plagiarism">
       <div class="plag-mode-toggle">
         <button class="mode-btn active" data-mode="compare">
@@ -160,7 +147,6 @@
         </button>
       </div>
 
-      <!-- Compare Mode -->
       <div class="plag-compare" id="plagCompare">
         <div class="compare-grid">
           <div class="compare-col">
@@ -191,7 +177,6 @@
         </div>
       </div>
 
-      <!-- Self Mode -->
       <div class="plag-self hidden" id="plagSelf">
         <div class="input-header">
           <h2><i data-lucide="file-search"></i> Analyze Text for Internal Duplication</h2>
@@ -205,13 +190,11 @@
         </div>
       </div>
 
-      <!-- Loading -->
       <div class="loading-state hidden" id="plagLoading">
         <div class="loading-spinner"></div>
         <p>Running plagiarism analysis...</p>
       </div>
 
-      <!-- Compare Results -->
       <div class="results-section hidden" id="plagResults">
         <div class="results-header">
           <h2><i data-lucide="bar-chart-3"></i> Comparison Results</h2>
@@ -227,7 +210,6 @@
 
         <div class="stats-row" id="plagStats"></div>
 
-        <!-- Side by Side Highlight -->
         <h3 class="section-title"><i data-lucide="highlight"></i> Matched Sections</h3>
         <div class="compare-highlight-grid">
           <div class="highlight-col">
@@ -240,14 +222,12 @@
           </div>
         </div>
 
-        <!-- Match List -->
         <div class="match-list-section" id="matchListSection">
           <h3 class="section-title"><i data-lucide="link"></i> Matched Sentence Pairs</h3>
           <div class="match-list" id="matchList"></div>
         </div>
       </div>
 
-      <!-- Self Results -->
       <div class="results-section hidden" id="plagSelfResults">
         <div class="results-header">
           <h2><i data-lucide="bar-chart-3"></i> Self-Analysis Results</h2>
@@ -264,7 +244,6 @@
       </div>
     </section>
 
-    <!-- ===== HUMANIZER TAB ===== -->
     <section class="tab-panel" id="panel-humanizer">
       <div class="input-section">
         <div class="input-header">
@@ -273,7 +252,6 @@
         </div>
         <textarea id="humanizerInput" class="text-input" placeholder="Paste AI-generated text here to make it sound more natural and human...&#10;&#10;The humanizer will apply 8 transformation steps to make the text more natural." rows="8"></textarea>
 
-        <!-- Options -->
         <div class="humanizer-options">
           <div class="option-group">
             <label>Intensity</label>
@@ -316,19 +294,16 @@
         </div>
       </div>
 
-      <!-- Loading -->
       <div class="loading-state hidden" id="humanizerLoading">
         <div class="loading-spinner"></div>
         <p>Applying 8-step humanization pipeline...</p>
       </div>
 
-      <!-- Results -->
       <div class="results-section hidden" id="humanizerResults">
         <div class="results-header">
           <h2><i data-lucide="sparkles"></i> Humanization Results</h2>
         </div>
 
-        <!-- Before/After Gauges -->
         <div class="before-after">
           <div class="ba-item">
             <div class="ba-label">Before</div>
@@ -345,7 +320,6 @@
           </div>
         </div>
 
-        <!-- Output -->
         <div class="humanizer-output">
           <div class="output-header">
             <h3><i data-lucide="file-output"></i> Humanized Text</h3>
@@ -356,20 +330,17 @@
           <div class="output-text" id="humanizedOutput"></div>
         </div>
 
-        <!-- Diff View -->
         <h3 class="section-title"><i data-lucide="git-compare"></i> Changes Made</h3>
         <div class="diff-container" id="diffContainer"></div>
 
-        <!-- Changes Summary -->
         <h3 class="section-title"><i data-lucide="list-checks"></i> Change Summary (<span id="changeCount">0</span> changes)</h3>
         <div class="changes-list" id="changesList"></div>
       </div>
     </section>
   </main>
 
-  <!-- Footer -->
   <footer class="footer">
-    <p>TextForge AI — Your text never leaves your browser. All analysis runs 100% client-side.</p>
+    <p>ArsavoX — Your text never leaves your browser. All analysis runs 100% client-side.</p>
     <p class="footer-tech">Built with statistical NLP: Perplexity Analysis • Burstiness Detection • Rabin-Karp Fingerprinting • Cosine Similarity • Shannon Entropy</p>
   </footer>
 
